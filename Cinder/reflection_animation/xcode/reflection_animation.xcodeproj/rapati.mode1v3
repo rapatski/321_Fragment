@@ -270,7 +270,7 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>7</integer>
+									<integer>3</integer>
 									<integer>2</integer>
 									<integer>0</integer>
 								</array>
@@ -313,7 +313,7 @@
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>ShapeContainer.cpp</string>
+								<string>Shape.cpp</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -321,11 +321,11 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>ShapeContainer.cpp</string>
+										<string>Shape.cpp</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>0C2D4558157F9547009C9BB4</string>
+										<string>0C2D4586157FBA3A009C9BB4</string>
 										<key>history</key>
 										<array>
 											<string>0C4781061573DE8900F605AD</string>
@@ -333,10 +333,10 @@
 											<string>0C47814C1573ED6C00F605AD</string>
 											<string>0C47826F1575141100F605AD</string>
 											<string>0C2D04D4157F6175002E3946</string>
-											<string>0C2D04DD157F622A002E3946</string>
-											<string>0C2D4548157F93D5009C9BB4</string>
-											<string>0C2D4549157F93D5009C9BB4</string>
-											<string>0C2D454A157F93D5009C9BB4</string>
+											<string>0C2D4571157FAA03009C9BB4</string>
+											<string>0C2D4572157FAA03009C9BB4</string>
+											<string>0C2D4584157FBA3A009C9BB4</string>
+											<string>0C2D4585157FBA3A009C9BB4</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -534,7 +534,6 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>0C2D4559157F9547009C9BB4</string>
 		<string>0C2D4543157F9200009C9BB4</string>
 		<string>0C2D4544157F9200009C9BB4</string>
 		<string>1C78EAAD065D492600B07095</string>

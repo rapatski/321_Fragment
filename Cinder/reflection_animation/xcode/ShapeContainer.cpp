@@ -52,8 +52,8 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
 				int currenth = k;
 				
 				// horizontal plane i x j
-				for (int i = 0; i < currentw; i+=2) {
-					for (int j = 0; j < currenth; j+=2) {
+				for (int i = 0; i < currentw; i+=1) {
+					for (int j = 0; j < currenth; j+=1) {
 						
 						// we are at i, j on horizontal plane at vertical level k
 						// w, d, h are the dimensions of the object -> gridsize
@@ -64,13 +64,13 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
                         
 						float x = i*w - currentw*w/2;
 						float y = k*h - _numlevels*h/2.0f; // y is up;;
-						float z = j*d - currenth*d/2;
+						float z = j*d - currenth*d/2; 
                         
 						
 						Shape p = Shape();
 						p.init(x, y, z, w, -h, d, false);
 						
-                        
+                        //if((i%2 == 0 && j%2 == 0) || k%2 == 0)
 						m_shapes.push_back( p );
 						
 					} //j
@@ -87,7 +87,7 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
             d = tan(M_PI/3.0)*(_w/2.0);
             h = d;
 			
-			for (int k = 1; k <= _numlevels; k+=2)
+			for (int k = 1; k <= _numlevels; k++)
 			{
 				// we're at level k (vertical)
 				
@@ -160,7 +160,7 @@ void ShapeContainer::update(Surface8u _surf, bool _showColour, bool _showHighCon
         
         alpha = (_showHighContrast) ? (rf+gf+bf - 127)/128.0f : (rf+gf+bf)/255.0f;
         
-        ColorA col = (_showColour) ? ColorA(pixelIter.r()/255.0, pixelIter.g()/255.0, pixelIter.b()/255.0, 0.3f) : ColorA( 1.0f, 1.0f, 1.0f, alpha/2.0f);
+        ColorA col = (_showColour) ? ColorA(pixelIter.r()/255.0, pixelIter.g()/255.0, pixelIter.b()/255.0, alpha/2.0f) : ColorA( 1.0f, 1.0f, 1.0f, alpha/2.0f);
         shapeIt->update(col);
 			
 		
