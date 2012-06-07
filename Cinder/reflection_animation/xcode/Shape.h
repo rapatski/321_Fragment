@@ -9,21 +9,19 @@
 
 #include "cinder/Vector.h"
 #include "cinder/Color.h"
+#include <vector>
 
 class Shape
 {
   public:
-    bool operator < (const Shape& rhs)
-    {
-        return m_index < rhs.m_index;
-    }
-    
-  public:
 	ci::Vec3f  pos;
 	ci::Vec3f  dim;
-    
+
     int        m_index;
-	
+	int        m_i, m_k, m_j;
+    
+    std::vector<ci::ColorA> faceColours;
+    
 	ci::ColorA strokeColour;
     ci::ColorA activeFaceColour;
     ci::ColorA inActiveFaceColour;
@@ -34,13 +32,16 @@ class Shape
 	
 	Shape();
 	void init(float _x, float _y, float _z, float _w, float _h, float _d, bool _flipped);
-    void setIndex(int _i);
-	void update(ci::ColorA _col);
+    void setCoordinates(int _i, int _k, int _j);
+    void setIndex(int _index);
+
+	void updateFaces(std::vector<ci::ColorA> _faceColours);
+    
 	void draw();
-    void drawPyramid( bool _showDichroics);
-	void drawPyramid(float _x, float _y, float _z, float _w, float _h, float _d, bool _showDichroics);
-    void drawTetra( bool _showDichroics);
-	void drawTetra(float _x, float _y, float _z, float _w, float _h, float _d, bool _showDichroics);
+    void drawPyramid();
+	void drawPyramid(float _x, float _y, float _z, float _w, float _h, float _d);
+    void drawTetra();
+	void drawTetra(float _x, float _y, float _z, float _w, float _h, float _d);
 	void drawPolygon3D(ci::Vec3f _vertices[], int _numverts, int _primitive);
 };
 

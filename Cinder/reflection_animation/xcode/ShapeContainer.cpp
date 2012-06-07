@@ -7,30 +7,45 @@
  *
  */
 
+
 #include "ShapeContainer.h"
+
+#include <algorithm>
 #include "cinder/CinderMath.h"
 
 using namespace ci;
-using namespace uva;
-using  std::list;
+using namespace std;
+using std::vector;
 
 using std::cout;
 
 ShapeContainer::ShapeContainer()
 {
-	// pyramids!
-	
+	m_type              = PYRAMID;
+    
+    // MATERIAL
+    m_showColour        = false;
+    m_alpha             = 0.5f;
+    m_contrast          = 1.0f;
+    
+    // ANIMATION
+    m_aniMode           = STATIC;
+    
+    // radar
+    m_interval          = 360;
+    m_frontarea         = 1.f;
+    m_backarea          = 5.f;
 }
-void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float _h)
+
+void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w, float _h)
 {
-    // init!
+    // initialise m_shapes
     m_shapes.resize(0);
-	
 	m_type = _shape;
 	
-	// construct structure based on type
     float w, h, d;
 	
+    // construct structure based on type
 	switch (m_type) 
 	{
 		case PYRAMID:
@@ -41,9 +56,9 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
             h = _h;
             d = _w; // regular pyramid has square base
 			
-			//pos = Vec3f(0, _numlevels*_h/2.0f, 0);
+			//pos = Vec3f(0, _numlevels*_h/2.0f, 0);-
 			
-			for (int k = 1; k <= _numlevels; k+=2)
+			for (int k = 1; k <= _numlevels; k+=_incr)
 			{
 				// we're at level k (vertical)
 				
@@ -60,18 +75,22 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
 						
                         //h = (k%2 == 0) ? _h * -1 : _h;
                         
-                        
-                        
 						float x = i*w - currentw*w/2;
-						float y = k*h - _numlevels*h/2.0f; // y is up;;
+						float y = k*h - _numlevels*h/2.0f; // y is up;
 						float z = j*d - currenth*d/2; 
                         
 						
 						Shape p = Shape();
 						p.init(x, y, z, w, -h, d, false);
+                        p.setCoordinates(i, k, j);
 						
                         //if((i%2 == 0 && j%2 == 0) || k%2 == 0)
 						m_shapes.push_back( p );
+                        
+                        Shape q = Shape();
+                        q.init(x, y+h, z, w, h, d, false);
+                        q.setCoordinates(i, k+1, j);
+                        m_shapes.push_back( q );
 						
 					} //j
 				} //i
@@ -87,7 +106,7 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
             d = tan(M_PI/3.0)*(_w/2.0);
             h = d;
 			
-			for (int k = 1; k <= _numlevels; k++)
+			for (int k = 1; k <= _numlevels; k+=_incr)
 			{
 				// we're at level k (vertical)
 				
@@ -99,17 +118,25 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
 						
 						// we are at i, j on horizontal plane at vertical level k
 						// w, d, h are the dimensions of the object -> gridsize
+                        
+                        float c = _w/2.0*tan(3.141593/6.0);
 						
 						float x = j*w - k*w/2 - i*w/2;
-						float y = -k*h + _numlevels*h/2.0f; // y is up;
-						float z = i*d - k*d/2;
+						float y = k*h - _numlevels*h/2.0f; // y is up;
+						float z = i*d - k*c;
 						
-                        bool flipped = false; //(k%2 == 0) ? true : false;
+                        //bool flipped = false; //(k%2 == 0) ? true : false;
                         
 						Shape p = Shape();
-						p.init(x, y, z, w, h, d, flipped);
-						
+						p.init(x, y, z, w, -h, d, false);
+                        p.setCoordinates(i, k, j);
 						m_shapes.push_back( p );
+                        
+                        Shape q = Shape();
+                        q.init(x, y, z, w, h, d, false);
+                        q.setCoordinates(i, k, j);
+                        m_shapes.push_back( q );
+                        
 						
 					} // i
 				} // j
@@ -124,62 +151,149 @@ void ShapeContainer::init(uva::ShapeType _shape, int _numlevels, float _w, float
 
 	// set random indices
     
-    for( list<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
+    for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
 	{
         int index = rand()%m_shapes.size();
         shapeIt->setIndex(index);
     }
     
-    m_shapes.sort();
-    //random_shuffle(m_shapes.begin(), m_shapes.end());
+    random_shuffle(m_shapes.begin(), m_shapes.end());
     
 }
+
+
+void ShapeContainer::setMaterialSettings(std::vector<DisplayMode> _faceModes, bool _showColour, float _alpha, float _contrast)
+{
+    m_faceModes = _faceModes;
+    m_showColour = _showColour;
+    m_contrast = _contrast;
+    m_alpha = _alpha;
     
-void ShapeContainer::update(Surface8u _surf, bool _showColour, bool _showHighContrast)
+}
+
+void ShapeContainer::setAnimationSettings(AnimationMode _aniMode)
+{
+    m_aniMode = _aniMode;
+}
+
+void ShapeContainer::setRadarSettings(int _interval, float _frontarea, float _backarea)
+{
+    m_interval = _interval;
+    m_frontarea = _frontarea;
+    m_backarea = _backarea;
+}
+
+    
+void ShapeContainer::update(Surface8u _surf, int _tNow)
 {
 	Surface8u::Iter pixelIter = _surf.getIter();
 
 	// update!
-	for( list<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt) 
+	for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt) 
 	{
-		if (!pixelIter.pixel()) {
-            if(pixelIter.line())
+
+        vector<ColorA> faceColours;
+        
+        for (int i = 0; i < m_faceModes.size(); i++) {
+            
+            float alpha = 1.0f;
+            float rc = 1.0f;
+            float gc = 1.0f;
+            float bc = 1.0f;
+            
+            if (m_aniMode == VIDEO || m_aniMode == VIDEO_RADAR)
             {
-                pixelIter.pixel(); // reset x to 0
-            } else {
-                return;
+                rc = pixelIter.r()/255.f;
+                gc = pixelIter.g()/255.f;
+                bc = pixelIter.b()/255.f;
+                
+                alpha *= (rc + gc + bc) / 3.f;
             }
-
+            
+            if (m_aniMode == RADAR || m_aniMode == VIDEO_RADAR)
+            {
+                float progress = (_tNow%m_interval)/(float)m_interval;
+                
+                // to be sure, add twice area size
+                float radarY = -max(m_backarea, m_frontarea) + progress*(14.f + max(m_backarea, m_frontarea)*2);
+                
+                float factor = 0;
+                float diff = shapeIt->m_k - radarY;
+                
+                if (diff > 0)
+                {
+                    if(diff < m_frontarea) 
+                        factor = 1 - diff/m_frontarea;
+                }
+                if (diff <= 0)
+                {
+                    if(diff > -m_backarea) 
+                        factor = 1 - diff/-m_backarea;
+                }
+                
+                alpha *= factor;
+            }
+            
+            if (!pixelIter.pixel()) {
+                if(pixelIter.line())
+                {
+                    pixelIter.pixel(); // reset x to 0
+                } else {
+                    return;
+                }
+                
+            }
+            
+            ColorA col = ColorA(0, 0, 0, 0);
+            alpha = (alpha - .5f)*m_contrast + .5f;
+            if(alpha < 0) alpha = 0;
+            if(alpha > 1) alpha = 1;
+            
+            alpha *= m_alpha;
+            
+            
+            switch (m_faceModes[i]) {
+                case ACTIVE:
+                    col = (m_showColour) ? ColorA(rc, gc, bc, alpha) : ColorA( 1.0f, 1.0f, 1.0f, alpha);
+                    break;
+                case DICHROIC1:
+                    col = ColorA(0.3f, 0.8f, 1.0f, .1f);
+                    break;
+                case DICHROIC2:
+                    col = ColorA(1.0f, 0.8f, 0.3f, .1f);
+                    break;
+                case GLASS:
+                    col = ColorA(1.0f, 1.0f, 1.0f, .015f);
+                    break;
+                case NONE:
+                    col = ColorA(1.0f, 1.0f, 1.0f, 0.f);
+                    break;
+                default:
+                    col = ColorA(1.0f, 1.0f, 1.0f, 0.f);
+                    break;
+            }
+            faceColours.push_back(col);
+            
         }
+        
+        shapeIt->updateFaces(faceColours);
 
-        float rf = pixelIter.r()*.33;
-        float gf = pixelIter.g()*.33;
-        float bf = pixelIter.b()*.34;
-        
-        float alpha = 1.0f;
-        
-        alpha = (_showHighContrast) ? (rf+gf+bf - 127)/128.0f : (rf+gf+bf)/255.0f;
-        
-        ColorA col = (_showColour) ? ColorA(pixelIter.r()/255.0, pixelIter.g()/255.0, pixelIter.b()/255.0, alpha/2.0f) : ColorA( 1.0f, 1.0f, 1.0f, alpha/2.0f);
-        shapeIt->update(col);
-			
-		
 
 	}
 	
 }
-void ShapeContainer::draw(bool _showDichroics)
+void ShapeContainer::draw()
 {
 	// draw
-	for( list<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
+	for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
 	{
         switch (m_type) {
             case PYRAMID:
-                shapeIt->drawPyramid(_showDichroics);
+                shapeIt->drawPyramid();
                 break;
             
             case TETRA:
-                shapeIt->drawTetra(_showDichroics);
+                shapeIt->drawTetra();
                 break;
                 
             default:

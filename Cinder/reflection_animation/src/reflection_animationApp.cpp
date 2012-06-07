@@ -8,11 +8,11 @@
 #include "cinder/Text.h"
 #include "cinder/MayaCamUI.h"
 
+#include "constants.h";
 
-#include "ShapeContainer.h"
+#include "ShapeContainer.h";
 
 
-using namespace uva;
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -21,9 +21,10 @@ using std::cout;
 
 
 
-
 class reflection_animationApp : public AppBasic {
   public:
+    
+    
 	void prepareSettings( Settings *settings );
 	
 	void setup();
@@ -41,27 +42,45 @@ class reflection_animationApp : public AppBasic {
 	// gui
 	params::InterfaceGl m_params;
 	
+    // DISPLAY
     bool				m_showInterface;
 	bool				m_showColour;
-    bool                m_showHighContrast;
-    bool                m_showDichroics;
-	
-	// camera
-	Vec3f				m_eye, m_center, m_up;
-
-    MayaCamUI           m_mayaCam;
-	float				m_cameraDistance;
+    RenderMode          m_renderMode;
     
-    Vec3f               m_pan;
+    float               m_contrast;
+    float               m_alpha;
+    
+    DisplayMode         m_face1Display;
+    DisplayMode         m_face2Display;
+    DisplayMode         m_face3Display;
+    DisplayMode         m_face4Display;
+    
+    ColorA              m_dichroic1Colour;
+    ColorA              m_dichroic2Colour;
 	
-	Quatf				m_sceneRotation;
+	// CAMERA
+	Vec3f				m_eye, m_center, m_up;
+    MayaCamUI           m_mayaCam;
+
+    Quatf				m_sceneRotation;
+	float				m_cameraDistance;
+
 	
-	// shapes
+	// STRUCTURE
 	ShapeContainer      m_structure;
     
     ShapeType           m_shapeType;
     int                 m_numlevels;
+    int                 m_incr;
     Vec3f               m_shapeDims;
+    
+    // ANIMATION
+    AnimationMode       m_aniMode;
+    
+    // radar
+    int                 m_interval;
+    float               m_frontarea;
+    float               m_backarea;
 	
   private:
 	vector<Capture>		m_capture;
@@ -79,88 +98,124 @@ void reflection_animationApp::prepareSettings( Settings *settings )
 
 void reflection_animationApp::setup()
 {
-	// shapes
+    
+	// STRUCTURE
 	
-	m_shapeDims = Vec3f(50, 60, 50);
-	m_numlevels = 14;
+	m_shapeDims = Vec3f(50, 75, 50);
+	m_numlevels = 12;
+    m_incr = 2;
 	
     m_shapeType = PYRAMID;
     
-	// initialise shapes
-	m_structure.init(m_shapeType, m_numlevels, m_shapeDims.x, m_shapeDims.y);
-	
+    initShape();
 	cout << m_structure.m_shapes.size() << endl;
-	
-	// gui
-	m_params = params::InterfaceGl( "Reflections", Vec2i( 300, 600 ) );
-	//m_params.addText( "emptyline1", "label=` `" );
-	
-	m_params.addText( "camera", "label=`Camera`" );
-	m_params.addSeparator();	
-	m_params.addParam( "Scene Rotation", &m_sceneRotation );
-    m_params.addParam( "Panning", &m_pan, "min=0.0 max=2000.0 step=5.0 ");
     
-	m_params.addParam( "Eye Distance", &m_cameraDistance, "min=50.0 max=2000.0 step=5.0 keyIncr== keyDecr=-" );
+    // DISPLAY
     
+    m_showInterface = true;
+	m_showColour = true;
+    m_renderMode = ALPHA;
     
-	m_params.addText( "emptyline2", "label=` `" );
+    m_contrast = 4.0f;
+    m_alpha = .45f;
+    
+    m_face1Display = ACTIVE;
+    m_face2Display = DICHROIC1;
+    m_face3Display = GLASS;
+    m_face4Display = NONE;
+    
+    m_dichroic1Colour = Color(0.3f, 0.8f, 1.0f);
+    m_dichroic2Colour = Color(1.0f, 0.8f, 0.3f);
 	
+    // ANIMATION
+    
+    m_aniMode = VIDEO;
+    
+    // radar
+    m_interval = 360;
+    m_frontarea = 1.5f;
+    m_backarea  = 6.0f;
+    
+	// GUI
+    
+	m_params = params::InterfaceGl( "Geometry/Animation Parameters [press TAB to hide]", Vec2i( 400, 600 ) );
+	
+    // render
+    m_params.addText( "render", "label=`Render`" );
+	m_params.addSeparator();
+    vector<string> rstrs; rstrs.push_back("ALPHA"); rstrs.push_back("ADDITIVE"); rstrs.push_back("MULTIPLY");
+    m_params.addParam( "Render Mode", rstrs, (int*)&m_renderMode );
+    m_params.addParam( "Use Colour", &m_showColour );
+    m_params.addParam( "Alpha", &m_alpha, "min=0.001 max=2.0 step=0.1" );
+	m_params.addParam( "Contrast", &m_contrast, "min=0.001 max=5.0 step=0.1" );
+	m_params.addParam( "Dichroic Colour 1", &m_dichroic1Colour );
+	m_params.addParam( "Dichroic Colour 2", &m_dichroic2Colour );
+    m_params.addText( "emptyline1", "label=` `" );
+    
+    // structure
 	m_params.addText( "structure", "label=`Structure`" );
 	m_params.addSeparator();
-	m_params.addParam( "Use Colour", &m_showColour );
-	m_params.addParam( "Show High Contrast", &m_showHighContrast );
-	m_params.addParam( "Show Dichroics", &m_showDichroics );
-    m_params.addText( "emptyline3", "label=` `" );
+    vector<string> dstrs; dstrs.push_back("ACTIVE"); dstrs.push_back("DICHROIC1"); dstrs.push_back("DICHROIC2"); dstrs.push_back("GLASS"); dstrs.push_back("NONE");
+	m_params.addParam( "Face 1 Display mode", dstrs, (int*)&m_face1Display );
+    m_params.addParam( "Face 2 Display mode", dstrs, (int*)&m_face2Display );
+    m_params.addParam( "Face 3 Display mode", dstrs, (int*)&m_face3Display );
+    m_params.addParam( "Face 4 Display mode", dstrs, (int*)&m_face4Display );
+    m_params.addText( "emptyline2", "label=` `" );
     
+    // generate shape
     m_params.addText( "generate", "label=`Generate`" );
 	m_params.addSeparator();
-	//m_params.addParam( "Shape", &m_shapeType );
-    m_params.addParam( "Number of levels", &m_numlevels );
+    vector<string> sstrs; sstrs.push_back("PYRAMID"); sstrs.push_back("TETRAHEDRON"); sstrs.push_back("HOLLOW PYRAMID");
+	m_params.addParam( "Shape", sstrs, (int*)&m_shapeType );
+    m_params.addParam( "Number Of Levels", &m_numlevels );
+    m_params.addParam( "Vertical Interval", &m_incr );
     m_params.addParam( "Shape Dimensions", &m_shapeDims );
     m_params.addButton( "Recreate Shape", std::bind( &reflection_animationApp::initShape, this ) );
-	
-	m_showInterface = true;
-    m_showHighContrast = false;
-	m_showColour = true;
-    m_showDichroics = false;
-	
-	// virtual camera
-	m_eye        = Vec3f( 0.0f, 0.0f, m_cameraDistance );
-	m_center     = Vec3f::zero();
-	m_up         = Vec3f::yAxis() * -1;
+    m_params.addText( "emptyline3", "label=` `" );
     
-    m_pan        = Vec3f::zero();
+    // animation
+    m_params.addText( "animation", "label=`Animation`" );
+	m_params.addSeparator();
+    vector<string> astrs; astrs.push_back("STATIC"); astrs.push_back("RADAR"); astrs.push_back("VIDEO"); astrs.push_back("VIDEO_RADAR");
+	m_params.addParam( "Animation Mode", astrs, (int*)&m_aniMode );
+    m_params.addParam( "Interval", &m_interval );
+    m_params.addParam( "Size (front)", &m_frontarea );
+    m_params.addParam( "Size (tail)", &m_backarea );
+    
+    m_params.addButton( "Recreate Shape", std::bind( &reflection_animationApp::initShape, this ) );
+    
 	
+	// CAMERA/PERSPECTIVE (not updated anymore -> mayacam)
+
 	m_cameraDistance = 800.0f;
+    
+    m_eye        = Vec3f( 0.0f, 0.0f, m_cameraDistance );
+	m_center     = Vec3f::zero();
+	m_up         = Vec3f::yAxis();
     
     CameraPersp cam;
     
-    cam.setEyePoint(Vec3f(0, 0, m_cameraDistance));
-    cam.setCenterOfInterestPoint(Vec3f::zero());
+    cam.setEyePoint(m_eye);
+    cam.setCenterOfInterestPoint(m_center);
+    cam.setWorldUp(m_up);
     cam.setPerspective(60.0, getWindowAspectRatio(), 5.0, 5000.0);
     m_mayaCam.setCurrentCam( cam );
     
 	
-	// capture
-	// list out the devices
+	// CAPTURE/VIDEO/INPUT
+    
 	vector<Capture::DeviceRef> devices( Capture::getDevices() );
 	for( vector<Capture::DeviceRef>::const_iterator deviceIt = devices.begin(); deviceIt != devices.end(); ++deviceIt ) {
 		Capture::DeviceRef device = *deviceIt;
 		console() << "Found Device " << device->getName() << " ID: " << device->getUniqueId() << std::endl;
 		try {
 			if( device->checkAvailable() ) {
-				m_capture.push_back( Capture( 300, 200, device ) );
+
+				m_capture.push_back( Capture( 600, 400, device ) );
 				m_capture.back().start();
 				
-				// placeholder text
+				// placeholder texture
 				m_textures.push_back( gl::Texture() );
-				
-				// render the name as a texture
-				TextLayout layout;
-				layout.setFont( Font( "Arial", 24 ) );
-				layout.setColor( Color( 1, 1, 1 ) );
-				layout.addLine( device->getName() );
-				m_nameTextures.push_back( gl::Texture( layout.render( true ) ) );
 			}
 			else
 				console() << "device is NOT available" << std::endl;
@@ -177,14 +232,27 @@ void reflection_animationApp::setup()
 void reflection_animationApp::update()
 {
 	
-	// update capture devices
+	// CAPTURE/VIDEO/INPUT
+    
 	for( vector<Capture>::iterator cIt = m_capture.begin(); cIt != m_capture.end(); ++cIt ) {
 		if( cIt->checkNewFrame() ) {
 			Surface8u surf = cIt->getSurface();
 			m_textures[cIt - m_capture.begin()] = gl::Texture( surf );
 			
-			// update pyramid
-			m_structure.update(surf, m_showColour, m_showHighContrast);
+            DisplayMode faceModesArr[] = {
+                m_face1Display, m_face2Display, m_face3Display, m_face4Display
+            };
+            vector<DisplayMode> faceModes(faceModesArr, faceModesArr+4);
+            
+            // these should actually only be updated on change
+            m_structure.setMaterialSettings( faceModes, m_showColour, m_alpha, m_contrast );
+            m_structure.setAnimationSettings( m_aniMode );
+            m_structure.setRadarSettings( m_interval, m_frontarea, m_backarea);
+            
+            // update master shape
+            int tNow = getElapsedFrames();
+
+			m_structure.update(surf, tNow);
 			
 		}
 	}
@@ -194,47 +262,57 @@ void reflection_animationApp::update()
 
 void reflection_animationApp::draw()
 {
-	// clear out the window with black
-	//gl::clear( Color( 0, 0, 0 ) ); 
+    
+	// BACKGROUND
+    
+	gl::clear( Color( 0.0025f, 0.0025f, 0.0025f ) ); 
 	
-	glClearColor( 0.0025f, 0.0025f, 0.0025f, 1 );
 	gl::enableDepthWrite( false );
 	gl::enableDepthRead( false );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	
-    //gl::enableAdditiveBlending();
-    gl::enableAlphaBlending();
+    // RENDER MODE
+    
+    switch (m_renderMode) {
+        case ALPHA:
+            gl::enableAlphaBlending();
+            break;
+        case ADDITIVE:
+            gl::enableAdditiveBlending();
+            break;
+        default:
+            gl::enableAlphaBlending();
+            break;
+    }
+    
+    // DRAW
 
-	
-	
 	// camera
 	//m_eye        = Vec3f( 0.0f, 0.0f, m_cameraDistance );
 	//m_camPers.lookAt( m_eye, m_center, m_up );
-	
+    
 	// matrices
 	gl::setMatrices( m_mayaCam.getCamera() );
-    
-	//gl::rotate( m_sceneRotation );
-    //gl::translate( m_pan );
-	
+
 	// draw pyramid
-	m_structure.draw(m_showDichroics);
+	m_structure.draw();
 	
-	// gui
+	// GUI
+    
 	if(m_showInterface) params::InterfaceGl::draw();
 }
 
 void reflection_animationApp::initShape()
 {
     // initialise shapes
-    //m_shapeType = (m_shapeType + 1)%2;
-    m_shapeType = (m_shapeType == TETRA) ? m_shapeType = PYRAMID : m_shapeType = TETRA;
-	m_structure.init(m_shapeType, m_numlevels, m_shapeDims.x, m_shapeDims.y);
+	m_structure.init(m_shapeType, m_numlevels, m_incr, m_shapeDims.x, m_shapeDims.y);
 	
+    
 }
 
 void reflection_animationApp::resize( ResizeEvent event )
 {
+    // reset camera on resize
 	CameraPersp cam = m_mayaCam.getCamera();
     cam.setAspectRatio( getWindowAspectRatio() );
     m_mayaCam.setCurrentCam( cam );

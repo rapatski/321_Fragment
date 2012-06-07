@@ -36,6 +36,7 @@
 		0C4780C31573D52B00F605AD /* ShapeContainer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShapeContainer.cpp; sourceTree = "<group>"; };
 		0CE284C9157683180087271B /* Shape.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Shape.cpp; sourceTree = "<group>"; };
 		0CE284CA157683180087271B /* Shape.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Shape.h; sourceTree = "<group>"; };
+		0CEF4A5A1580C3E6007F69C1 /* constants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = constants.h; sourceTree = "<group>"; };
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
@@ -77,6 +78,7 @@
 				00BAE6590E7ED9C10018A608 /* reflection_animationApp.cpp */,
 				0C4780C21573D52B00F605AD /* ShapeContainer.h */,
 				0C4780C31573D52B00F605AD /* ShapeContainer.cpp */,
+				0CEF4A5A1580C3E6007F69C1 /* constants.h */,
 			);
 			name = Source;
 			sourceTree = "<group>";

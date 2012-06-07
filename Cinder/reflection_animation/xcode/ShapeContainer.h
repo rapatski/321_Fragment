@@ -9,16 +9,11 @@
 
 #pragma once
 #include "Shape.h"
-#include <list>
+#include <vector>
 #include "cinder/Vector.h"
 #include "cinder/Surface.h"
 
-namespace uva 
-{
-    enum ShapeType {
-        PYRAMID, TETRA
-    };
-}
+#include "constants.h";
 
 class ShapeContainer 
 {
@@ -34,10 +29,28 @@ class ShapeContainer
     };
     
     ShapeContainer();
-	void init(uva::ShapeType _shape, int _numlevels, float _w, float _h);
-    void update(ci::Surface8u _surf, bool _showColour, bool _showHighContrast);
-    void draw(bool _showDichroics);
+	void init(ShapeType _shape, int _numlevels, int _incr, float _w, float _h);
+    void setMaterialSettings(std::vector<DisplayMode> _faceModes, bool _showColour, float _alpha, float _contrast);
+    void setAnimationSettings(AnimationMode _aniMode);
+    void setRadarSettings(int _interval, float _frontarea, float _backarea);
+    void update(ci::Surface8u _surf, int _tNow);
+    void draw();
     
-    uva::ShapeType m_type;
-    std::list<Shape> m_shapes;
+    // STRUCTURE
+    ShapeType                   m_type;
+    std::vector<Shape>          m_shapes;
+    
+    // MATERIAL
+    std::vector<DisplayMode>    m_faceModes;
+    bool                        m_showColour;
+    float                       m_alpha;
+    float                       m_contrast;
+    
+    // ANIMATION
+    AnimationMode               m_aniMode;
+    
+    // radar
+    int                         m_interval;
+    float                       m_frontarea;
+    float                       m_backarea;
 };
