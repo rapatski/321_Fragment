@@ -33,12 +33,13 @@ class ShapeContainer
     void setMaterialSettings(std::vector<DisplayMode> _faceModes, bool _showColour, float _alpha, float _contrast);
     void setAnimationSettings(AnimationMode _aniMode);
     void setRadarSettings(int _interval, float _frontarea, float _backarea);
-    void update(ci::Surface8u _surf, int _tNow);
+    void update(ci::Surface8u* _surf, int _tNow);
     void draw();
     
     // STRUCTURE
     ShapeType                   m_type;
     std::vector<Shape>          m_shapes;
+    Shape                       m_structure;
     
     // MATERIAL
     std::vector<DisplayMode>    m_faceModes;

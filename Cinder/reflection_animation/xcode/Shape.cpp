@@ -28,11 +28,15 @@ void Shape::init(float _x, float _y, float _z, float _w, float _h, float _d, boo
 	pos = Vec3f(_x, _y, _z);
 	dim = Vec3f(_w, _h, _d);
     
+    m_isActive = false;
+    
     flipped = _flip;
     
     strokeColour = ColorA(1.0f, 1.0f, 1.0f, .10f);
     activeFaceColour = ColorA(1.0f, 1.0f, 1.0f, .05f);
     inActiveFaceColour = ColorA(1.0f, 1.0f, 1.0f, .015f);
+    
+    faceColours.assign(4, ColorA(0, 0, 0, 0));
 
 }
 
@@ -46,6 +50,11 @@ void Shape::setCoordinates(int _i, int _k, int _j)
 void Shape::setIndex(int _index)
 {
     m_index = _index;
+}
+
+void Shape::setActive()
+{
+    m_isActive = true;
 }
 
 

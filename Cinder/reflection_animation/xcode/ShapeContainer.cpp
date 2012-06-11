@@ -44,6 +44,8 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 	m_type = _shape;
 	
     float w, h, d;
+    float ow, oh, od;
+    
 	
     // construct structure based on type
 	switch (m_type) 
@@ -58,7 +60,7 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 			
 			//pos = Vec3f(0, _numlevels*_h/2.0f, 0);-
 			
-			for (int k = 1; k <= _numlevels; k+=_incr)
+			for (int k = 1; k <= _numlevels; k++)
 			{
 				// we're at level k (vertical)
 				
@@ -83,18 +85,38 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 						Shape p = Shape();
 						p.init(x, y, z, w, -h, d, false);
                         p.setCoordinates(i, k, j);
-						
-                        //if((i%2 == 0 && j%2 == 0) || k%2 == 0)
-						m_shapes.push_back( p );
-                        
+		
                         Shape q = Shape();
                         q.init(x, y+h, z, w, h, d, false);
                         q.setCoordinates(i, k+1, j);
-                        m_shapes.push_back( q );
+
+                               
+                        if (k%_incr == 0) {
+                            p.setActive();
+                            q.setActive();
+                        }
+                        
+                        if((i%2 == 0 && j%2 == 0) || k%2 == 0)
+                        {
+                            m_shapes.push_back( p );
+                            m_shapes.push_back( q );
+                            
+                        }
+                        
 						
 					} //j
 				} //i
 			} //k
+            
+            
+            
+            ow = w*_numlevels;
+            oh = -h*_numlevels;
+            od = d*_numlevels;
+            
+            m_structure.init(-w/2.f, h/2.f, -d/2.f, ow, oh, od, false);
+                
+            
 			
 			break;
 			
@@ -106,7 +128,7 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
             d = tan(M_PI/3.0)*(_w/2.0);
             h = d;
 			
-			for (int k = 1; k <= _numlevels; k+=_incr)
+			for (int k = 1; k <= _numlevels; k++)
 			{
 				// we're at level k (vertical)
 				
@@ -127,14 +149,22 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 						
                         //bool flipped = false; //(k%2 == 0) ? true : false;
                         
+                        
+                        
 						Shape p = Shape();
 						p.init(x, y, z, w, -h, d, false);
                         p.setCoordinates(i, k, j);
-						m_shapes.push_back( p );
                         
                         Shape q = Shape();
                         q.init(x, y, z, w, h, d, false);
                         q.setCoordinates(i, k, j);
+                        
+                        if (k%_incr == 0) {
+                            p.setActive();
+                            q.setActive();
+                        }
+                        
+                        m_shapes.push_back( p );
                         m_shapes.push_back( q );
                         
 						
@@ -142,6 +172,14 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 				} // j
 			} // k
 			
+            
+            ow = w*_numlevels;
+            oh = -h*_numlevels;
+            od = d*_numlevels;
+            
+            m_structure.init(0, 0, 0, ow, oh, od, false);
+            
+            
 			break;
 		
 		default:
@@ -184,13 +222,16 @@ void ShapeContainer::setRadarSettings(int _interval, float _frontarea, float _ba
 }
 
     
-void ShapeContainer::update(Surface8u _surf, int _tNow)
+void ShapeContainer::update(Surface8u* _surf, int _tNow)
 {
-	Surface8u::Iter pixelIter = _surf.getIter();
+	Surface8u::Iter pixelIter = _surf->getIter();
 
 	// update!
 	for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt) 
 	{
+        
+        if (!shapeIt->m_isActive) 
+            continue;
 
         vector<ColorA> faceColours;
         
@@ -285,22 +326,28 @@ void ShapeContainer::update(Surface8u _surf, int _tNow)
 void ShapeContainer::draw()
 {
 	// draw
-	for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
-	{
-        switch (m_type) {
-            case PYRAMID:
+	
+    switch (m_type) {
+        case PYRAMID:
+            for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
                 shapeIt->drawPyramid();
-                break;
-            
-            case TETRA:
+
+            m_structure.drawPyramid();
+            break;
+        
+        case TETRA:
+            for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt ) 
                 shapeIt->drawTetra();
-                break;
-                
-            default:
-                break;
-        }
+
+            m_structure.drawTetra();
+            break;
+            
+        default:
+            break;
+    }
 		
-	}
+	
+    
 	
 }
 

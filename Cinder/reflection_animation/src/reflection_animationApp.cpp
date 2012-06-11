@@ -7,6 +7,9 @@
 #include "cinder/Capture.h"
 #include "cinder/Text.h"
 #include "cinder/MayaCamUI.h"
+#include "cinder/qtime/MovieWriter.h"
+#include "cinder/Utilities.h"
+#include <sstream>
 
 #include "constants.h";
 
@@ -18,6 +21,7 @@ using namespace ci::app;
 using namespace std;
 
 using std::cout;
+
 
 
 
@@ -41,9 +45,14 @@ class reflection_animationApp : public AppBasic {
   public:
 	// gui
 	params::InterfaceGl m_params;
+    // video
+    qtime::MovieWriter  m_movieWriter;
+    fs::path            m_path;
 	
     // DISPLAY
     bool				m_showInterface;
+    bool                m_recording;
+    
 	bool				m_showColour;
     RenderMode          m_renderMode;
     
@@ -84,6 +93,8 @@ class reflection_animationApp : public AppBasic {
 	
   private:
 	vector<Capture>		m_capture;
+    
+    Surface8u           m_surface;
 	vector<gl::Texture>	m_textures;
 	vector<gl::Texture>	m_nameTextures;
 	vector<Surface>		m_retainedSurfaces;
@@ -91,7 +102,7 @@ class reflection_animationApp : public AppBasic {
 
 void reflection_animationApp::prepareSettings( Settings *settings )
 {
-	settings->setWindowSize( 1440, 900 );
+	settings->setWindowSize( 1680, 1050 );
 	settings->setFrameRate( 60.0f );
 	settings->setFullScreen( false );
 }
@@ -113,6 +124,10 @@ void reflection_animationApp::setup()
     // DISPLAY
     
     m_showInterface = true;
+    m_recording = false;
+    
+    m_path = getHomeDirectory() / "Desktop/"; 
+    
 	m_showColour = true;
     m_renderMode = ALPHA;
     
@@ -204,6 +219,8 @@ void reflection_animationApp::setup()
 	
 	// CAPTURE/VIDEO/INPUT
     
+    m_surface = Surface8u(600, 400, true);
+    
 	vector<Capture::DeviceRef> devices( Capture::getDevices() );
 	for( vector<Capture::DeviceRef>::const_iterator deviceIt = devices.begin(); deviceIt != devices.end(); ++deviceIt ) {
 		Capture::DeviceRef device = *deviceIt;
@@ -231,31 +248,31 @@ void reflection_animationApp::setup()
 
 void reflection_animationApp::update()
 {
-	
-	// CAPTURE/VIDEO/INPUT
     
 	for( vector<Capture>::iterator cIt = m_capture.begin(); cIt != m_capture.end(); ++cIt ) {
 		if( cIt->checkNewFrame() ) {
-			Surface8u surf = cIt->getSurface();
-			m_textures[cIt - m_capture.begin()] = gl::Texture( surf );
-			
-            DisplayMode faceModesArr[] = {
-                m_face1Display, m_face2Display, m_face3Display, m_face4Display
-            };
-            vector<DisplayMode> faceModes(faceModesArr, faceModesArr+4);
-            
-            // these should actually only be updated on change
-            m_structure.setMaterialSettings( faceModes, m_showColour, m_alpha, m_contrast );
-            m_structure.setAnimationSettings( m_aniMode );
-            m_structure.setRadarSettings( m_interval, m_frontarea, m_backarea);
-            
-            // update master shape
-            int tNow = getElapsedFrames();
-
-			m_structure.update(surf, tNow);
+			m_surface = cIt->getSurface();
+			//m_textures[cIt - m_capture.begin()] = gl::Texture( m_surface );
 			
 		}
 	}
+    
+    // these should actually only be updated on change
+    
+    DisplayMode faceModesArr[] = {
+        m_face1Display, m_face2Display, m_face3Display, m_face4Display
+    };
+    vector<DisplayMode> faceModes(faceModesArr, faceModesArr+4);
+    
+    m_structure.setMaterialSettings( faceModes, m_showColour, m_alpha, m_contrast );
+    m_structure.setAnimationSettings( m_aniMode );
+    m_structure.setRadarSettings( m_interval, m_frontarea, m_backarea);
+    
+    // update master shape
+    
+    int tNow = getElapsedFrames();
+    
+    m_structure.update(&m_surface, tNow);
 	
 }
 	
@@ -299,6 +316,12 @@ void reflection_animationApp::draw()
 	
 	// GUI
     
+    if (m_recording) {
+        Surface frame = copyWindowSurface();
+        m_movieWriter.addFrame( frame );
+    }
+    
+    
 	if(m_showInterface) params::InterfaceGl::draw();
 }
 
@@ -332,6 +355,25 @@ void reflection_animationApp::keyUp( KeyEvent event )
 {
     if (event.getCode() == KeyEvent::KEY_TAB) {
         m_showInterface = !m_showInterface;
+    }
+    
+    if (event.getCode() == KeyEvent::KEY_SPACE) {
+        Surface frame = copyWindowSurface();
+        stringstream filename;
+        filename << "geometry_screenshot_" << (getElapsedFrames()) << ".png";
+        writeImage( m_path / filename.str(), frame);
+    }
+    
+    if (event.getCode() == KeyEvent::KEY_r) {
+        if (m_recording) {
+            m_movieWriter.finish();
+        }
+        if (!m_recording) {
+            stringstream filename;
+            filename << "geometry_animation_" << (getElapsedFrames()) << ".mov";
+            m_movieWriter = qtime::MovieWriter( m_path / filename.str(), getWindowWidth(), getWindowHeight() );
+        }
+        m_recording = !m_recording;
     }
 }
 
