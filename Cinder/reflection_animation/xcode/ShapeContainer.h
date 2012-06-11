@@ -30,9 +30,9 @@ class ShapeContainer
     
     ShapeContainer();
 	void init(ShapeType _shape, int _numlevels, int _incr, float _w, float _h);
-    void setMaterialSettings(std::vector<DisplayMode> _faceModes, bool _showColour, float _alpha, float _contrast);
-    void setAnimationSettings(AnimationMode _aniMode);
-    void setRadarSettings(int _interval, float _frontarea, float _backarea);
+    void setMaterialSettings(std::vector<DisplayMode*> _pfaceModes, bool *_showColour, float *_alpha, float *_contrast);
+    void setAnimationSettings(AnimationMode *_aniMode);
+    void setRadarSettings(int* _interval, float *_frontarea, float *_backarea);
     void update(ci::Surface8u* _surf, int _tNow);
     void draw();
     
@@ -42,16 +42,16 @@ class ShapeContainer
     Shape                       m_structure;
     
     // MATERIAL
-    std::vector<DisplayMode>    m_faceModes;
-    bool                        m_showColour;
-    float                       m_alpha;
-    float                       m_contrast;
+    std::vector<DisplayMode*>    m_faceModes;
+    bool                        *p_showColour;
+    float                       *p_alpha;
+    float                       *p_contrast;
     
     // ANIMATION
-    AnimationMode               m_aniMode;
+    AnimationMode               *p_aniMode;
     
     // radar
-    int                         m_interval;
-    float                       m_frontarea;
-    float                       m_backarea;
+    int                         *p_interval;
+    float                       *p_frontarea;
+    float                       *p_backarea;
 };

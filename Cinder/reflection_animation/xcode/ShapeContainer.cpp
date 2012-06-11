@@ -24,17 +24,19 @@ ShapeContainer::ShapeContainer()
 	m_type              = PYRAMID;
     
     // MATERIAL
-    m_showColour        = false;
-    m_alpha             = 0.5f;
-    m_contrast          = 1.0f;
+    p_showColour        = NULL;
+    p_alpha             = NULL;
+    p_contrast          = NULL;
     
     // ANIMATION
-    m_aniMode           = STATIC;
+    p_aniMode           = NULL;
     
     // radar
-    m_interval          = 360;
-    m_frontarea         = 1.f;
-    m_backarea          = 5.f;
+    p_interval          = NULL;
+    p_frontarea         = NULL;
+    p_backarea          = NULL;
+    
+    //m_faceModes         = NULL;
 }
 
 void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w, float _h)
@@ -200,31 +202,44 @@ void ShapeContainer::init(ShapeType _shape, int _numlevels, int _incr, float _w,
 }
 
 
-void ShapeContainer::setMaterialSettings(std::vector<DisplayMode> _faceModes, bool _showColour, float _alpha, float _contrast)
+void ShapeContainer::setMaterialSettings(std::vector<DisplayMode*> _faceModes, bool *_showColour, float *_alpha, float *_contrast)
 {
     m_faceModes = _faceModes;
-    m_showColour = _showColour;
-    m_contrast = _contrast;
-    m_alpha = _alpha;
+    p_showColour = _showColour;
+    p_contrast = _contrast;
+    p_alpha = _alpha;
     
 }
 
-void ShapeContainer::setAnimationSettings(AnimationMode _aniMode)
+void ShapeContainer::setAnimationSettings(AnimationMode *_aniMode)
 {
-    m_aniMode = _aniMode;
+    p_aniMode = _aniMode;
 }
 
-void ShapeContainer::setRadarSettings(int _interval, float _frontarea, float _backarea)
+void ShapeContainer::setRadarSettings(int *_interval, float *_frontarea, float *_backarea)
 {
-    m_interval = _interval;
-    m_frontarea = _frontarea;
-    m_backarea = _backarea;
+    p_interval = _interval;
+    p_frontarea = _frontarea;
+    p_backarea = _backarea;
 }
 
     
 void ShapeContainer::update(Surface8u* _surf, int _tNow)
 {
 	Surface8u::Iter pixelIter = _surf->getIter();
+    
+    if (p_aniMode == NULL) return;
+    
+    AnimationMode           aniMode     = *p_aniMode;
+    
+    int                     interval    = *p_interval;
+    float                   frontarea   = *p_frontarea;
+    float                   backarea    = *p_backarea;
+    
+    float                   contrast    = *p_contrast;
+    float                   afactor     = *p_alpha;
+    
+    bool                    showColour  = *p_showColour;
 
 	// update!
 	for( vector<Shape>::iterator shapeIt = m_shapes.begin(); shapeIt != m_shapes.end(); ++shapeIt) 
@@ -242,7 +257,7 @@ void ShapeContainer::update(Surface8u* _surf, int _tNow)
             float gc = 1.0f;
             float bc = 1.0f;
             
-            if (m_aniMode == VIDEO || m_aniMode == VIDEO_RADAR)
+            if (aniMode == VIDEO || aniMode == VIDEO_RADAR)
             {
                 rc = pixelIter.r()/255.f;
                 gc = pixelIter.g()/255.f;
@@ -251,25 +266,25 @@ void ShapeContainer::update(Surface8u* _surf, int _tNow)
                 alpha *= (rc + gc + bc) / 3.f;
             }
             
-            if (m_aniMode == RADAR || m_aniMode == VIDEO_RADAR)
+            if (aniMode == RADAR || aniMode == VIDEO_RADAR)
             {
-                float progress = (_tNow%m_interval)/(float)m_interval;
+                float progress = (_tNow%interval)/(float)interval;
                 
                 // to be sure, add twice area size
-                float radarY = -max(m_backarea, m_frontarea) + progress*(14.f + max(m_backarea, m_frontarea)*2);
+                float radarY = -max(backarea, frontarea) + progress*(14.f + max(backarea, frontarea)*2);
                 
                 float factor = 0;
                 float diff = shapeIt->m_k - radarY;
                 
                 if (diff > 0)
                 {
-                    if(diff < m_frontarea) 
-                        factor = 1 - diff/m_frontarea;
+                    if(diff < frontarea) 
+                        factor = 1 - diff/frontarea;
                 }
                 if (diff <= 0)
                 {
-                    if(diff > -m_backarea) 
-                        factor = 1 - diff/-m_backarea;
+                    if(diff > -backarea)
+                        factor = 1 - diff/-backarea;
                 }
                 
                 alpha *= factor;
@@ -286,16 +301,16 @@ void ShapeContainer::update(Surface8u* _surf, int _tNow)
             }
             
             ColorA col = ColorA(0, 0, 0, 0);
-            alpha = (alpha - .5f)*m_contrast + .5f;
+            alpha = (alpha - .5f)*contrast + .5f;
             if(alpha < 0) alpha = 0;
             if(alpha > 1) alpha = 1;
             
-            alpha *= m_alpha;
+            alpha *= afactor;
             
             
-            switch (m_faceModes[i]) {
+            switch (*m_faceModes[i]) {
                 case ACTIVE:
-                    col = (m_showColour) ? ColorA(rc, gc, bc, alpha) : ColorA( 1.0f, 1.0f, 1.0f, alpha);
+                    col = (showColour) ? ColorA(rc, gc, bc, alpha) : ColorA( 1.0f, 1.0f, 1.0f, alpha);
                     break;
                 case DICHROIC1:
                     col = ColorA(0.3f, 0.8f, 1.0f, .1f);

@@ -242,6 +242,18 @@ void reflection_animationApp::setup()
 		}
 	}
 	
+    // these should actually only be updated on change --> pointers to parameters
+    
+    DisplayMode* faceModesArr[] = {
+        &m_face1Display, &m_face2Display, &m_face3Display, &m_face4Display
+    };
+    vector<DisplayMode*> p_faceModes(faceModesArr, faceModesArr+4);
+    
+    m_structure.setMaterialSettings( p_faceModes, &m_showColour, &m_alpha, &m_contrast );
+    m_structure.setAnimationSettings( &m_aniMode );
+    m_structure.setRadarSettings( &m_interval, &m_frontarea, &m_backarea);
+    
+    
 }
 
 
@@ -257,16 +269,6 @@ void reflection_animationApp::update()
 		}
 	}
     
-    // these should actually only be updated on change
-    
-    DisplayMode faceModesArr[] = {
-        m_face1Display, m_face2Display, m_face3Display, m_face4Display
-    };
-    vector<DisplayMode> faceModes(faceModesArr, faceModesArr+4);
-    
-    m_structure.setMaterialSettings( faceModes, m_showColour, m_alpha, m_contrast );
-    m_structure.setAnimationSettings( m_aniMode );
-    m_structure.setRadarSettings( m_interval, m_frontarea, m_backarea);
     
     // update master shape
     
